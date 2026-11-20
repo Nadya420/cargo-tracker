@@ -1,63 +1,52 @@
-const $ = (id) => document.getElementById(id);
-let cargoItems = [];
-
-async function api(url, options = {}) {
-  const response = await fetch(url, {headers: {"Content-Type":"application/json"}, ...options});
-  const data = await response.json();
-  if (!response.ok) throw new Error(data.error || "Ошибка запроса");
-  return data;
+const $ = s => document.querySelector(s);
+const browserMode = new URLSearchParams(location.search).get('mode') === 'browser' || !['127.0.0.1','localhost','[::1]'].includes(location.hostname);
+let shipments = [], statuses = [], currentId = null, registering = false;
+const escapeHTML = value => String(value).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const date = value => new Date(value).toLocaleString('ru-RU', {dateStyle:'short',timeStyle:'short'});
+async function api(path, data) {
+  if(browserMode){try{return await window.CargoBrowser.request(path,data);}catch(error){if(error.message==='Войдите в аккаунт'){$('#workspace').hidden=true;$('#auth').hidden=false;}throw error;}}
+  const response = await fetch(path, data === undefined ? {} : {method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(data)});
+  const result = await response.json();
+  if (!response.ok) {
+    if(response.status === 401 && !['/api/login','/api/register'].includes(path)){ $('#workspace').hidden=true; $('#auth').hidden=false; }
+    throw Error(result.error || 'Не удалось выполнить запрос');
+  }
+  return result;
 }
-function setLoggedIn(value) {
-  $("loginPanel").classList.toggle("hidden", value);
-  $("dashboard").classList.toggle("hidden", !value);
-  $("logoutBtn").classList.toggle("hidden", !value);
-}
-async function loadCargo() {
-  cargoItems = await api("/api/cargo");
-  render();
-}
-function render() {
-  $("totalCount").textContent = cargoItems.length;
-  $("movingCount").textContent = cargoItems.filter(x => x.status === "В пути").length;
-  $("doneCount").textContent = cargoItems.filter(x => x.status === "Доставлен").length;
-  const q = $("searchInput").value.toLowerCase();
-  const filtered = cargoItems.filter(x => [x.id,x.name,x.origin,x.destination].join(" ").toLowerCase().includes(q));
-  $("cargoRows").innerHTML = filtered.map(x => {
-    const cls = x.status === "Доставлен" ? "done" : x.status === "На таможне" ? "customs" : "";
-    return `<tr><td><strong>${escapeHtml(x.id)}</strong><small>${escapeHtml(x.name)}</small></td><td>${escapeHtml(x.origin)} → ${escapeHtml(x.destination)}</td><td><span class="pill ${cls}">${escapeHtml(x.status)}</span></td><td>${escapeHtml(x.updated || "—")}</td><td><button class="ghost" onclick="changeStatus('${encodeURIComponent(x.id)}')">Изменить статус</button></td></tr>`;
-  }).join("");
-  $("emptyState").classList.toggle("hidden", filtered.length > 0);
-}
-function escapeHtml(s) { return String(s).replace(/[&<>"']/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c])); }
-window.changeStatus = async (encodedId) => {
-  const id = decodeURIComponent(encodedId);
-  const item = cargoItems.find(x => x.id === id);
-  const statuses = ["Зарегистрирован","В пути","На таможне","Доставлен"];
-  const next = statuses[(statuses.indexOf(item.status)+1)%statuses.length];
-  try { await api(`/api/cargo/${encodeURIComponent(id)}`, {method:"PATCH", body:JSON.stringify({status:next,updated:new Date().toISOString().slice(0,10)})}); await loadCargo(); }
-  catch(e) { alert(e.message); }
-};
-$("loginForm").addEventListener("submit", async e => {
-  e.preventDefault(); $("loginError").textContent = "";
-  const form = new FormData(e.target);
-  try { await api("/api/login", {method:"POST",body:JSON.stringify({username:form.get("username"),password:form.get("password")})}); setLoggedIn(true); await loadCargo(); }
-  catch(err) { $("loginError").textContent = err.message; }
-});
-$("logoutBtn").addEventListener("click", async () => { await api("/api/logout",{method:"POST"}); setLoggedIn(false); });
-$("showAdd").addEventListener("click", () => $("addPanel").classList.remove("hidden"));
-$("closeAdd").addEventListener("click", () => $("addPanel").classList.add("hidden"));
-$("searchInput").addEventListener("input", render);
-$("cargoForm").addEventListener("submit", async e => {
-  e.preventDefault(); $("formError").textContent = "";
-  const data = Object.fromEntries(new FormData(e.target).entries());
-  data.updated = new Date().toISOString().slice(0,10);
-  try { await api("/api/cargo",{method:"POST",body:JSON.stringify(data)}); e.target.reset(); $("addPanel").classList.add("hidden"); await loadCargo(); }
-  catch(err) { $("formError").textContent = err.message; }
-});
-$("exportBtn").addEventListener("click", async () => {
+let toastTimer;
+function toast(message){$('#toast').textContent=message;$('#toast').hidden=false;clearTimeout(toastTimer);toastTimer=setTimeout(()=>$('#toast').hidden=true,4500);}
+function badge(status){return `<span class="badge status${statuses.indexOf(status)}">${escapeHTML(status)}</span>`;}
+async function start(){
   try {
-    const data = await api("/api/export");
-    const blob = new Blob([JSON.stringify(data,null,2)],{type:"application/json"});
-    const a = document.createElement("a"); a.href = URL.createObjectURL(blob); a.download = "cargo-export.json"; a.click(); URL.revokeObjectURL(a.href);
-  } catch(e) { alert(e.message); }
-});
+    const me=await api('/api/me'); statuses=me.statuses;
+    $('#username').textContent=me.username;
+    $('.statuses');
+    document.querySelectorAll('.statuses').forEach(el=>el.innerHTML=statuses.map(s=>`<option>${escapeHTML(s)}</option>`).join(''));
+    $('#filter').innerHTML='<option value="">Все статусы</option>'+statuses.map(s=>`<option>${escapeHTML(s)}</option>`).join('');
+    await load(); $('#auth').hidden=true;$('#workspace').hidden=false;
+  } catch(e){ if(e.message!=='Войдите в аккаунт')toast(e.message); }
+}
+async function load(){shipments=await api('/api/shipments');render();}
+function render(){
+  $('#total').textContent=shipments.length;
+  $('#moving').textContent=shipments.filter(r=>['В пути','Выпущен'].includes(r.status)).length;
+  $('#customs').textContent=shipments.filter(r=>r.status==='На таможне').length;
+  $('#delivered').textContent=shipments.filter(r=>r.status==='Доставлен').length;
+  const q=$('#search').value.trim().toLocaleLowerCase('ru'),status=$('#filter').value;
+  const filtered=shipments.filter(r=>(!status||r.status===status)&&[r.tracking,r.name,r.origin,r.destination,r.location].some(v=>v.toLocaleLowerCase('ru').includes(q)));
+  $('#rows').innerHTML=filtered.map(r=>`<tr><td><strong>${escapeHTML(r.name)}</strong><small>${escapeHTML(r.tracking)}</small></td><td>${escapeHTML(r.origin)}<small>в ${escapeHTML(r.destination)}</small></td><td>${badge(r.status)}</td><td>${escapeHTML(r.location)}</td><td>${escapeHTML(date(r.updated_at))}</td><td><button class="row-open" data-id="${r.id}">Открыть</button></td></tr>`).join('');
+  $('#empty').hidden=!!filtered.length;$('#count').textContent=`Показано: ${filtered.length} из ${shipments.length}`;
+}
+$('#auth-toggle').onclick=()=>{registering=!registering;$('#auth-title').textContent=registering?'Создать аккаунт':'Вход в систему';$('#auth-submit').textContent=registering?'Зарегистрироваться':'Войти';$('#auth-toggle').textContent=registering?'Уже есть аккаунт? Войти':'Создать аккаунт';$('#auth-form').elements.password.autocomplete=registering?'new-password':'current-password';};
+$('#auth-form').onsubmit=async e=>{e.preventDefault();const b=$('#auth-submit');b.disabled=true;try{await api(registering?'/api/register':'/api/login',Object.fromEntries(new FormData(e.target)));e.target.reset();await start();}catch(err){toast(err.message);}finally{b.disabled=false;}};
+$('#logout').onclick=async()=>{try{await api('/api/logout',{});shipments=[];$('#search').value='';$('#workspace').hidden=true;$('#auth').hidden=false;}catch(e){toast(e.message);}};
+$('#new').onclick=()=>{$('#cargo-form').reset();$('#create-error').textContent='';$('#editor').showModal();};
+document.querySelectorAll('.close').forEach(b=>b.onclick=()=>b.closest('dialog').close());
+$('#search').oninput=render;$('#filter').onchange=render;
+$('#cargo-form').onsubmit=async e=>{e.preventDefault();const b=e.target.querySelector('.primary');b.disabled=true;try{await api('/api/shipments',Object.fromEntries(new FormData(e.target)));$('#editor').close();await load();toast('Груз зарегистрирован');}catch(err){$('#create-error').textContent=err.message;}finally{b.disabled=false;}};
+async function openDetails(id){const r=await api('/api/shipments/'+id);currentId=id;$('#detail-tracking').textContent=r.tracking;$('#detail-name').textContent=r.name;$('#detail-route').textContent=`${r.origin} → ${r.destination}`;const form=$('#update-form');form.reset();form.elements.status.value=r.status;form.elements.location.value=r.location;$('#update-error').textContent='';$('#history').innerHTML=r.history.map(h=>`<article class="event">${badge(h.status)}<p>${escapeHTML(h.location)} · ${escapeHTML(h.note)}</p><small>${escapeHTML(date(h.at))}</small></article>`).join('');if(!$('#details').open)$('#details').showModal();}
+$('#rows').onclick=async e=>{const b=e.target.closest('[data-id]');if(b)try{await openDetails(Number(b.dataset.id));}catch(err){toast(err.message);}};
+$('#update-form').onsubmit=async e=>{e.preventDefault();const b=e.target.querySelector('.primary');b.disabled=true;try{await api('/api/shipments/'+currentId,Object.fromEntries(new FormData(e.target)));await load();await openDetails(currentId);toast('Изменение сохранено в журнале');}catch(err){$('#update-error').textContent=err.message;}finally{b.disabled=false;}};
+$('#export').onclick=async()=>{try{let blob;if(browserMode){blob=new Blob([await window.CargoBrowser.exportCSV()],{type:'text/csv;charset=utf-8'});}else{const r=await fetch('/api/export');if(!r.ok)throw Error('Не удалось выгрузить CSV. Проверьте вход.');blob=await r.blob();}const url=URL.createObjectURL(blob);const a=document.createElement('a');a.href=url;a.download='cargoflow.csv';a.click();setTimeout(()=>URL.revokeObjectURL(url),1000);toast('CSV со всеми вашими грузами скачан');}catch(e){toast(e.message);}};
+if(browserMode){$('.notice').textContent='Браузерная демонстрация · данные только на этом устройстве · вход учебный, не используйте реальные данные';$('.demo small').textContent='Демонстрационный аккаунт готов к входу';$('aside a').href='./presentation.html?mode=browser';$('.login > p').textContent='Учебный вход. Записи хранятся в браузере на этом устройстве.';}
+start();

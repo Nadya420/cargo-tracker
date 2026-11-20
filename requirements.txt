@@ -1,1 +1,1 @@
-Flask==3.1.0
+# No third-party packages. Python 3 standard library is sufficient.

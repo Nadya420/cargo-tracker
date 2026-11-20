@@ -1,64 +1,6 @@
 <!doctype html>
-<html lang="ru">
-<head>
-  <meta charset="utf-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>Cargo Tracker — отслеживание грузов</title>
-  <link rel="stylesheet" href="/static/style.css">
-</head>
-<body>
-  <div class="app-shell">
-    <aside class="sidebar">
-      <div class="brand"><span class="brand-mark">CT</span><span>Cargo Tracker</span></div>
-      <div class="side-caption">ИНФОРМАЦИОННАЯ СИСТЕМА</div>
-      <a class="nav active" href="#dashboard">▦ Обзор грузов</a>
-      <a class="nav" href="#add">＋ Регистрация груза</a>
-      <div class="side-bottom">Учебный прототип<br><span>Версия 1.0</span></div>
-    </aside>
-    <main class="main">
-      <header class="topbar">
-        <div><div class="eyebrow">УПРАВЛЕНИЕ ЛОГИСТИКОЙ</div><h1>Отслеживание грузов</h1></div>
-        <button id="logoutBtn" class="ghost hidden">Выйти</button>
-      </header>
-      <section id="loginPanel" class="login-card">
-        <div class="eyebrow">ДОБРО ПОЖАЛОВАТЬ</div>
-        <h2>Войдите в систему</h2>
-        <p class="muted">Для демонстрации используйте учебную учётную запись.</p>
-        <form id="loginForm" class="form-grid">
-          <label>Логин<input name="username" value="admin" required></label>
-          <label>Пароль<input name="password" type="password" value="cargo123" required></label>
-          <button class="primary" type="submit">Войти в систему</button>
-          <div id="loginError" class="error"></div>
-        </form>
-      </section>
-      <section id="dashboard" class="hidden">
-        <div class="stats">
-          <article class="stat"><span>Всего грузов</span><strong id="totalCount">0</strong><small>В системе</small></article>
-          <article class="stat"><span>В пути</span><strong id="movingCount">0</strong><small>Текущий статус</small></article>
-          <article class="stat"><span>Доставлено</span><strong id="doneCount">0</strong><small>Успешно завершено</small></article>
-        </div>
-        <div class="section-heading"><div><div class="eyebrow">РЕЕСТР</div><h2>Список отправлений</h2></div><button class="primary" id="showAdd">＋ Добавить груз</button></div>
-        <div class="toolbar"><input id="searchInput" placeholder="Поиск по номеру, названию или стране…"><button class="ghost" id="exportBtn">Экспорт JSON ↓</button></div>
-        <div class="table-wrap">
-          <table><thead><tr><th>Номер / груз</th><th>Маршрут</th><th>Статус</th><th>Обновлено</th><th></th></tr></thead><tbody id="cargoRows"></tbody></table>
-          <div id="emptyState" class="empty hidden">Грузы не найдены. Добавьте первую запись.</div>
-        </div>
-        <section id="addPanel" class="add-panel hidden">
-          <div class="section-heading"><div><div class="eyebrow">НОВАЯ ЗАПИСЬ</div><h2>Регистрация груза</h2></div><button class="ghost" id="closeAdd">Закрыть</button></div>
-          <form id="cargoForm" class="cargo-form">
-            <label>Номер груза<input name="id" placeholder="Например, CT-1002" required></label>
-            <label>Наименование<input name="name" placeholder="Название или тип груза" required></label>
-            <label>Страна отправления<input name="origin" placeholder="Например, Китай" required></label>
-            <label>Страна назначения<input name="destination" placeholder="Например, Россия" required></label>
-            <label>Статус<select name="status"><option>Зарегистрирован</option><option>В пути</option><option>На таможне</option><option>Доставлен</option></select></label>
-            <button class="primary" type="submit">Сохранить груз</button>
-            <div id="formError" class="error"></div>
-          </form>
-        </section>
-      </section>
-      <footer> Cargo Tracker · Учебный проект в сфере таможенного дела</footer>
-    </main>
-  </div>
-  <script src="/static/app.js"></script>
-</body>
-</html>
+<html lang="ru"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>CargoFlow — отслеживание грузов</title><link rel="stylesheet" href="./style.css"><script defer src="./browser-demo.js"></script><script defer src="./app.js"></script></head>
+<body><div id="auth" class="auth"><section class="intro"><div class="logo">◈ CargoFlow</div><span class="eyebrow">ТАМОЖЕННАЯ ЛОГИСТИКА</span><h1>Каждый груз.<br>Под контролем.</h1><p>Единый реестр отправлений, актуальные статусы и прозрачная история движения.</p><div class="route-art"><span>Отправление</span><i></i><b>Таможня</b><i></i><span>Получатель</span></div><small>Учебный проект · Данные обновляются оператором</small></section><section class="login"><span class="eyebrow">РАБОЧЕЕ ПРОСТРАНСТВО</span><h2 id="auth-title">Вход в систему</h2><p>Войдите, чтобы управлять своими отправлениями.</p><form id="auth-form"><label>Логин<input name="username" autocomplete="username" minlength="3" maxlength="40" required placeholder="Ваш логин"></label><label>Пароль<input name="password" type="password" autocomplete="current-password" minlength="8" maxlength="128" required placeholder="Не менее 8 символов"></label><button class="primary" id="auth-submit">Войти</button></form><button class="text" id="auth-toggle">Создать аккаунт</button><div class="demo">Демонстрационный доступ<br><strong>demo</strong> / <strong>demo12345</strong><small>Доступен при запуске с --demo</small></div></section></div>
+<div id="workspace" hidden><aside><div class="logo">◈ CargoFlow</div><p class="eyebrow">РАБОЧЕЕ ПРОСТРАНСТВО</p><div class="nav-active">▦ Реестр грузов</div><a href="./presentation.html" target="_blank">▤ О проекте</a><div class="side-bottom"><span id="username"></span><button id="logout" class="text">Выйти из аккаунта</button></div></aside><main><header><div><span class="eyebrow">ОБЗОР ОТПРАВЛЕНИЙ</span><h1>Реестр грузов</h1><p>Маршруты, статусы и история в одном месте</p></div><button id="new" class="primary">＋ Зарегистрировать груз</button></header><div class="notice">Учебная система · Статусы и местоположение вносит оператор вручную</div><section class="stats"><article><span>Всего грузов</span><strong id="total">0</strong></article><article><span>В движении</span><strong id="moving">0</strong></article><article><span>На таможне</span><strong id="customs">0</strong></article><article><span>Доставлено</span><strong id="delivered">0</strong></article></section><section class="registry"><div class="toolbar"><label class="search"><span class="sr">Поиск грузов</span><input id="search" placeholder="Поиск по номеру, названию или маршруту"></label><label><span class="sr">Фильтр статуса</span><select id="filter"><option value="">Все статусы</option></select></label><button id="export" class="secondary">Скачать CSV</button></div><div class="table-wrap"><table><thead><tr><th>Груз / номер</th><th>Маршрут</th><th>Статус</th><th>Местоположение</th><th>Обновлено</th><th><span class="sr">Действия</span></th></tr></thead><tbody id="rows"></tbody></table><div id="empty" hidden>Грузы не найдены. Зарегистрируйте груз или измените поиск.</div></div><footer><span id="count"></span><span>Время отображается в вашем часовом поясе</span></footer></section></main></div>
+<dialog id="editor"><form id="cargo-form"><div class="dialog-head"><div><span class="eyebrow">НОВОЕ ОТПРАВЛЕНИЕ</span><h2>Регистрация груза</h2></div><button type="button" class="close" aria-label="Закрыть">×</button></div><div class="form-grid"><label>Номер отправления<input name="tracking" required maxlength="160" placeholder="CF-2026-005"></label><label>Название груза<input name="name" required maxlength="160" placeholder="Например, оборудование"></label><label>Страна отправления<input name="origin" required maxlength="160"></label><label>Страна назначения<input name="destination" required maxlength="160"></label><label>Статус<select name="status" class="statuses"></select></label><label>Местоположение<input name="location" required maxlength="160" placeholder="Город или терминал"></label></div><p id="create-error" role="alert" class="error"></p><button class="primary">Зарегистрировать</button></form></dialog>
+<dialog id="details"><div class="dialog-head"><div><span class="eyebrow" id="detail-tracking"></span><h2 id="detail-name"></h2></div><button class="close" aria-label="Закрыть">×</button></div><p id="detail-route"></p><form id="update-form"><div class="form-grid"><label>Статус<select name="status" class="statuses"></select></label><label>Местоположение<input name="location" required maxlength="160"></label></div><label>Комментарий<textarea name="note" maxlength="500" placeholder="Что изменилось?"></textarea></label><p id="update-error" role="alert" class="error"></p><button class="primary">Сохранить изменение</button></form><h3>Журнал изменений</h3><div id="history"></div></dialog><div id="toast" role="status" hidden></div></body></html>
