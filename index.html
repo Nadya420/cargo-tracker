@@ -1,0 +1,64 @@
+<!doctype html>
+<html lang="ru">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Cargo Tracker — отслеживание грузов</title>
+  <link rel="stylesheet" href="/static/style.css">
+</head>
+<body>
+  <div class="app-shell">
+    <aside class="sidebar">
+      <div class="brand"><span class="brand-mark">CT</span><span>Cargo Tracker</span></div>
+      <div class="side-caption">ИНФОРМАЦИОННАЯ СИСТЕМА</div>
+      <a class="nav active" href="#dashboard">▦ Обзор грузов</a>
+      <a class="nav" href="#add">＋ Регистрация груза</a>
+      <div class="side-bottom">Учебный прототип<br><span>Версия 1.0</span></div>
+    </aside>
+    <main class="main">
+      <header class="topbar">
+        <div><div class="eyebrow">УПРАВЛЕНИЕ ЛОГИСТИКОЙ</div><h1>Отслеживание грузов</h1></div>
+        <button id="logoutBtn" class="ghost hidden">Выйти</button>
+      </header>
+      <section id="loginPanel" class="login-card">
+        <div class="eyebrow">ДОБРО ПОЖАЛОВАТЬ</div>
+        <h2>Войдите в систему</h2>
+        <p class="muted">Для демонстрации используйте учебную учётную запись.</p>
+        <form id="loginForm" class="form-grid">
+          <label>Логин<input name="username" value="admin" required></label>
+          <label>Пароль<input name="password" type="password" value="cargo123" required></label>
+          <button class="primary" type="submit">Войти в систему</button>
+          <div id="loginError" class="error"></div>
+        </form>
+      </section>
+      <section id="dashboard" class="hidden">
+        <div class="stats">
+          <article class="stat"><span>Всего грузов</span><strong id="totalCount">0</strong><small>В системе</small></article>
+          <article class="stat"><span>В пути</span><strong id="movingCount">0</strong><small>Текущий статус</small></article>
+          <article class="stat"><span>Доставлено</span><strong id="doneCount">0</strong><small>Успешно завершено</small></article>
+        </div>
+        <div class="section-heading"><div><div class="eyebrow">РЕЕСТР</div><h2>Список отправлений</h2></div><button class="primary" id="showAdd">＋ Добавить груз</button></div>
+        <div class="toolbar"><input id="searchInput" placeholder="Поиск по номеру, названию или стране…"><button class="ghost" id="exportBtn">Экспорт JSON ↓</button></div>
+        <div class="table-wrap">
+          <table><thead><tr><th>Номер / груз</th><th>Маршрут</th><th>Статус</th><th>Обновлено</th><th></th></tr></thead><tbody id="cargoRows"></tbody></table>
+          <div id="emptyState" class="empty hidden">Грузы не найдены. Добавьте первую запись.</div>
+        </div>
+        <section id="addPanel" class="add-panel hidden">
+          <div class="section-heading"><div><div class="eyebrow">НОВАЯ ЗАПИСЬ</div><h2>Регистрация груза</h2></div><button class="ghost" id="closeAdd">Закрыть</button></div>
+          <form id="cargoForm" class="cargo-form">
+            <label>Номер груза<input name="id" placeholder="Например, CT-1002" required></label>
+            <label>Наименование<input name="name" placeholder="Название или тип груза" required></label>
+            <label>Страна отправления<input name="origin" placeholder="Например, Китай" required></label>
+            <label>Страна назначения<input name="destination" placeholder="Например, Россия" required></label>
+            <label>Статус<select name="status"><option>Зарегистрирован</option><option>В пути</option><option>На таможне</option><option>Доставлен</option></select></label>
+            <button class="primary" type="submit">Сохранить груз</button>
+            <div id="formError" class="error"></div>
+          </form>
+        </section>
+      </section>
+      <footer> Cargo Tracker · Учебный проект в сфере таможенного дела</footer>
+    </main>
+  </div>
+  <script src="/static/app.js"></script>
+</body>
+</html>
